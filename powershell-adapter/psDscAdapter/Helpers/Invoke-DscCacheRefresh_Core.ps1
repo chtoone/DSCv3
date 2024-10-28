@@ -36,7 +36,9 @@ function Invoke-DscCacheRefresh {
         if ($cache.CacheSchemaVersion -ne $script:CurrentCacheSchemaVersion) {
             $refreshCache = $true
             "Incompatible version of cache in file '"+$cache.CacheSchemaVersion+"' (expected '"+$script:CurrentCacheSchemaVersion+"')" | Write-DscTrace
-        } else {
+        }
+        else
+        {
             $dscResourceCacheEntries = $cache.ResourceCache
 
             if ($dscResourceCacheEntries.Count -eq 0) {
@@ -45,6 +47,38 @@ function Invoke-DscCacheRefresh {
 
                 "Filtered DscResourceCache cache is empty" | Write-DscTrace
             }
+            elseif ($Module.Count -gt 0)
+            {
+                $entriesToCheck = @()
+                $uniqueModules = $Module | Select-Object -Unique
+                # Verify the resource is in the cache
+                foreach ($m in $uniqueModules)
+                {
+                    $entries = $dscResourceCacheEntries | Where-Object { $_.Type -like "$m*" }
+                    if ($entries.Count -eq 0)
+                    {
+                        $refreshCache = $true
+                        $resourcesToRefresh = $m
+                        "Module $m is not cached" | Write-DscTrace -Operation Warn
+                    }
+                    else
+                    {
+                        $entriesToCheck += $entries
+                    }
+                }
+                
+                foreach ($entry in $entriesToCheck)
+                {
+                    $entry.LastWriteTimes.PSObject.Properties | ForEach-Object {
+                        if (Test-StaleCache -ResourcePath $_.Name -CacheWriteTime $_.Value)
+                        {
+                            $refreshCache = $true
+                            $resourcesToRefresh += $entry.Type
+                            #break
+                        }
+                    }
+                }
+            }
             else
             {
                 "Checking cache for stale entries" | Write-DscTrace
@@ -52,30 +86,11 @@ function Invoke-DscCacheRefresh {
                 foreach ($cacheEntry in $dscResourceCacheEntries) {
 
                     $cacheEntry.LastWriteTimes.PSObject.Properties | ForEach-Object {
-                    
-                        if (Test-Path $_.Name) {
-                            $file_LastWriteTime = (Get-Item $_.Name).LastWriteTime
-                            # Truncate DateTime to seconds
-                            $file_LastWriteTime = $file_LastWriteTime.AddTicks( - ($file_LastWriteTime.Ticks % [TimeSpan]::TicksPerSecond));
-
-                            $cache_LastWriteTime = [DateTime]$_.Value
-                            # Truncate DateTime to seconds
-                            $cache_LastWriteTime = $cache_LastWriteTime.AddTicks( - ($cache_LastWriteTime.Ticks % [TimeSpan]::TicksPerSecond));
-
-                            if (-not ($file_LastWriteTime.Equals($cache_LastWriteTime)))
-                            {
-                                "Detected stale cache entry '$($_.Name)'" | Write-DscTrace
-                                $refreshCache = $true
-                                break
-                            }
-                        } else {
-                            "Detected non-existent cache entry '$($_.Name)'" | Write-DscTrace
+                        if (Test-StaleCache -ResourcePath $_.Name -CacheWriteTime $_.Value) {
                             $refreshCache = $true
                             break
                         }
                     }
-
-                    if ($refreshCache) {break}
                 }
 
                 if (-not $refreshCache) {

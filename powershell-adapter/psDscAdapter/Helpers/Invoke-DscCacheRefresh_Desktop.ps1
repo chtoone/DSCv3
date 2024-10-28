@@ -78,6 +78,7 @@ function Invoke-DscCacheRefresh
                         $entriesToCheck += $entries
                     }
                 }
+                
                 foreach ($entry in $entriesToCheck)
                 {
                     $entry.LastWriteTimes.PSObject.Properties | ForEach-Object {

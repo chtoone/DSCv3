@@ -3,7 +3,13 @@
 
 $script:CurrentCacheSchemaVersion = 1
 
-Get-ChildItem -Path (Join-Path -Path $PSScriptRoot -ChildPath "Helpers") -Recurse -File | ForEach-Object -Process {. $_.FullName}
+$moduleRoot = (Get-Item -Path $PSScriptRoot).Parent
+# All generic helpers
+$moduleRoot.EnumerateFiles("Helpers/*.ps1").Where({ $_.Name -notmatch "_Core\.ps1|_Desktop\.ps1"}).ForEach({. $_.FullName})
+# Desktop specific helpers
+if ($IsWindows) {
+    $moduleRoot.EnumerateFiles("Helpers/*.ps1").Where({ $_.Name -match "_Desktop\.ps1"}).ForEach({. $_.FullName})
+}
 
 function Write-DscTrace {
     param(
