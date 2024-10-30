@@ -2,7 +2,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
-$adapterBase = Get-Item -Path (Get-Module -Name "DscV3" -ErrorAction Stop | Select-Object -Property ModuleBase)
+$adapterBase = Get-Item -Path (Get-Module -Name "DscV3" -ErrorAction Stop | Select-Object -ExpandProperty ModuleBase)
 $adapterBase.EnumerateFiles("Private/*.ps1").ForEach({ . $_.FullName })
 
 $script:CurrentCacheSchemaVersion = 2
