@@ -1,21 +1,11 @@
+#requires -module DscV3
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+$adapterBase = Get-Item -Path (Get-Module -Name "DscV3" -ErrorAction Stop | Select-Object -Property ModuleBase)
+$adapterBase.EnumerateFiles("Private/*.ps1").ForEach({ . $_.FullName })
+
 $script:CurrentCacheSchemaVersion = 1
-
-function Write-DscTrace {
-    param(
-        [Parameter(Mandatory = $false)]
-        [ValidateSet('Error', 'Warn', 'Info', 'Debug', 'Trace')]
-        [string]$Operation = 'Debug',
-
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Message
-    )
-
-    $trace = @{$Operation = $Message } | ConvertTo-Json -Compress
-    $host.ui.WriteErrorLine($trace)
-}
 
 # if the version of PowerShell is greater than 5, import the PSDesiredStateConfiguration module
 # this is necessary because the module is not included in the PowerShell 7.0+ releases;
