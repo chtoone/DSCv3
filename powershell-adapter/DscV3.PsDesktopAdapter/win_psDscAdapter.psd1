@@ -43,6 +43,7 @@ AliasesToExport = @()
 PrivateData = @{
     PSData = @{
         ProjectUri   = 'https://github.com/PowerShell/dsc'
+        Tags         = @('DscAdapter')
     }
 }
 }

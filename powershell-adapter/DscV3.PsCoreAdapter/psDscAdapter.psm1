@@ -1,26 +1,11 @@
+#requires -module DscV3
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT License.
 
+$adapterBase = Get-Item -Path (Get-Module -Name "DscV3" -ErrorAction Stop | Select-Object -ExpandProperty ModuleBase)
+$adapterBase.EnumerateFiles("Private/*.ps1").ForEach({ . $_.FullName })
+
 $script:CurrentCacheSchemaVersion = 2
-
-function Write-DscTrace {
-    param(
-        [Parameter(Mandatory = $false)]
-        [ValidateSet('Error', 'Warn', 'Info', 'Debug', 'Trace')]
-        [string]$Operation = 'Debug',
-
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Message
-    )
-
-    $trace = @{$Operation = $Message } | ConvertTo-Json -Compress
-    $host.ui.WriteErrorLine($trace)
-}
-
-function Import-PSDSCModule {
-    $m = Get-Module PSDesiredStateConfiguration -ListAvailable | Sort-Object -Descending | Select-Object -First 1
-    $PSDesiredStateConfiguration = Import-Module $m -Force -PassThru
-}
 
 function Get-DSCResourceModules
 {
